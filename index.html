@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My App</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* Login Page Styles */
+        .page {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .page.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            position: relative;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .logo h1 {
+            color: #333;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            border-color: #4285f4;
+            outline: none;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+        }
+
+        .remember-me input {
+            margin-right: 8px;
+        }
+
+        .forgot-password {
+            color: #4285f4;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #4285f4;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary:hover {
+            background-color: #3367d6;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .divider-text {
+            padding: 0 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .btn-google {
+            background-color: white;
+            color: #333;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-google:hover {
+            background-color: #f9f9f9;
+        }
+
+        .google-icon {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+        }
+
+        .create-account {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .create-account a {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .create-account a:hover {
+            text-decoration: underline;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Modal styles for create account */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .form-footer a {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Home Page Styles */
+        .home-page {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 60px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-logout:hover {
+            background-color: #c82333;
+        }
+
+        .home-content {
+            text-align: center;
+            max-width: 800px;
+            padding: 0 20px;
+        }
+
+        .welcome-section {
+            margin-bottom: 50px;
+        }
+
+        .welcome-section h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .welcome-section p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            opacity: 0.8;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 1.2rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading" class="loading">
+        Loading...
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="page">
+        <div class="container">
+            <div class="logo">
+                <h1>SIGN IN</h1>
+            </div>
+            <p class="subtitle">BORNEO SUN BEARS</p>
+            
+            <div id="message" class="message"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">EMAIL</label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">PASSWORD</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                
+                <div class="remember-forgot">
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember">
+                        <label for="remember">Remember me</label>
+                    </div>
+                    <a href="#" class="forgot-password" id="forgotPassword">FORGOT PASSWORD?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">SIGN IN</button>
+            </form>
+            
+            <div class="divider">
+                <span class="divider-text">OR</span>
+            </div>
+            
+            <button id="googleSignIn" class="btn btn-google">
+                <svg class="google-icon" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Sign in with Google
+            </button>
+            
+            <div class="create-account">
+                No account? <a id="showCreateAccount">CREATE ONE</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Home Page -->
+    <div id="homePage" class="page home-page">
+        <nav class="navbar">
+            <div class="nav-brand">My Awesome App</div>
+            <div class="nav-user">
+                <span class="user-info" id="userInfo">Welcome, User!</span>
+                <button class="btn-logout" id="logoutBtn">Logout</button>
+            </div>
+        </nav>
+
+        <div class="home-content">
+            <div class="welcome-section">
+                <h1>Welcome to Your Dashboard!</h1>
+                <p>You have successfully logged in. This is your personal home page where you can manage your account and access all features.</p>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <h3>📊 Analytics</h3>
+                    <p>View your personal statistics and performance metrics in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚙️ Settings</h3>
+                    <p>Customize your preferences and manage your account settings.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔒 Security</h3>
+                    <p>Monitor your account security and update your password.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📈 Progress</h3>
+                    <p>Track your progress and achievements over time.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Account Modal -->
+    <div id="createAccountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Account</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            
+            <div id="createAccountMessage" class="message"></div>
+            
+            <form id="createAccountForm">
+                <div class="form-group">
+                    <label for="createName">FULL NAME</label>
+                    <input type="text" id="createName" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="createEmail">EMAIL</label>
+                    <input type="email" id="createEmail" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="createPassword">PASSWORD</label>
+                    <input type="password" id="createPassword" placeholder="Create a password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">CONFIRM PASSWORD</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">CREATE ACCOUNT</button>
+            </form>
+            
+            <div class="form-footer">
+                Already have an account? <a id="showSignIn">SIGN IN</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration - Replace with your actual Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJb__FDeuIGTjNBz9gCyUnDBaZ2E562rk",
+            authDomain: "borneo-sun-bear.firebaseapp.com",
+            projectId: "borneo-sun-bear",
+            storageBucket: "borneo-sun-bear.firebasestorage.app",
+            messagingSenderId: "724709985734",
+            appId: "1:724709985734:web:f0d5aac42459edc03936c7"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // DOM elements
+        const loadingElement = document.getElementById('loading');
+        const loginPage = document.getElementById('loginPage');
+        const homePage = document.getElementById('homePage');
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const googleSignInBtn = document.getElementById('googleSignIn');
+        const messageDiv = document.getElementById('message');
+        const showCreateAccountBtn = document.getElementById('showCreateAccount');
+        const createAccountModal = document.getElementById('createAccountModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const showSignInBtn = document.getElementById('showSignIn');
+        const createAccountForm = document.getElementById('createAccountForm');
+        const createAccountMessage = document.getElementById('createAccountMessage');
+        const forgotPasswordBtn = document.getElementById('forgotPassword');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfo = document.getElementById('userInfo');
+
+        // Show page function
+        function showPage(page) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => {
+                p.classList.remove('active');
+            });
+            
+            // Show the requested page
+            page.classList.add('active');
+            
+            // Hide loading
+            loadingElement.style.display = 'none';
+        }
+
+        // Show message function
+        function showMessage(message, type, element = messageDiv) {
+            element.textContent = message;
+            element.className = `message ${type}`;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        // Modal functions
+        showCreateAccountBtn.addEventListener('click', () => {
+            createAccountModal.style.display = 'flex';
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            createAccountModal.style.display = 'none';
+        });
+
+        showSignInBtn.addEventListener('click', () => {
+            createAccountModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === createAccountModal) {
+                createAccountModal.style.display = 'none';
+            }
+        });
+
+        // Email/password login
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in
+                    const user = userCredential.user;
+                    showMessage(`Welcome back, ${user.email}!`, 'success');
+                    console.log('User signed in:', user);
+                    
+                    // Redirect to home page
+                    showHomePage(user);
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    let errorMessage = 'An error occurred during sign in.';
+                    
+                    if (errorCode === 'auth/user-not-found') {
+                        errorMessage = 'No account found with this email.';
+                    } else if (errorCode === 'auth/wrong-password') {
+                        errorMessage = 'Incorrect password.';
+                    } else if (errorCode === 'auth/invalid-email') {
+                        errorMessage = 'Invalid email format.';
+                    }
+                    
+                    showMessage(errorMessage, 'error');
+                    console.error('Sign in error:', error);
+                });
+        });
+
+        // Create account function
+        createAccountForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('createName').value;
+            const email = document.getElementById('createEmail').value;
+            const password = document.getElementById('createPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match!', 'error', createAccountMessage);
+                return;
+            }
+            
+            // Validate password length
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters!', 'error', createAccountMessage);
+                return;
+            }
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Account created successfully
+                    const user = userCredential.user;
+                    
+                    // Update user profile with name
+                    return user.updateProfile({
+                        displayName: name
+                    }).then(() => {
+                        showMessage('Account created successfully!', 'success', createAccountMessage);
+                        console.log('User account created:', user);
+                        
+                        // Close modal and redirect to home page
+                        setTimeout(() => {
+                            createAccountModal.style.display = 'none';
+                            createAccountForm.reset();
+                            showHomePage(user);
+                        }, 2000);
+                    });
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    let errorMessage = 'An error occurred during account creation.';
+                    
+                    if (errorCode === 'auth/email-already-in-use') {
+                        errorMessage = 'This email is already registered.';
+                    } else if (errorCode === 'auth/invalid-email') {
+                        errorMessage = 'Invalid email format.';
+                    } else if (errorCode === 'auth/weak-password') {
+                        errorMessage = 'Password is too weak.';
+                    }
+                    
+                    showMessage(errorMessage, 'error', createAccountMessage);
+                    console.error('Create account error:', error);
+                });
+        });
+
+        // Google Sign-In
+        googleSignInBtn.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    // Signed in with Google
+                    const user = result.user;
+                    showMessage(`Welcome, ${user.displayName}!`, 'success');
+                    console.log('Google sign in successful:', user);
+                    
+                    // Redirect to home page
+                    showHomePage(user);
+                })
+                .catch((error) => {
+                    showMessage('Failed to sign in with Google.', 'error');
+                    console.error('Google sign in error:', error);
+                });
+        });
+
+        // Show home page function - REDIRECT KE GOOGLE SITE ANDA
+function showHomePage(user) {
+    // ==== BAHAGIAN INI YANG PERLU ANDA UBAH ====
+    // GANTI URL ini dengan URL Google Site anda yang sebenar
+    const yourGoogleSiteURL = "https://sites.google.com/view/educationsunbears/home-page";
+    // ==== HINGGA SINI ====
+    
+    // Tunjukkan message success
+    showMessage(`Welcome ${user.displayName || user.email}! Redirecting...`, 'success');
+    
+    // Redirect selepas 2 saat
+    setTimeout(() => {
+        window.location.href = yourGoogleSiteURL;
+    }, 2000);
+}
+
+        // Logout function
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                showPage(loginPage);
+                loginForm.reset();
+            }).catch((error) => {
+                console.error('Logout error:', error);
+            });
+        });
+
+        // Forgot password function
+        forgotPasswordBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const email = prompt('Please enter your email address to reset your password:');
+            
+            if (email) {
+                auth.sendPasswordResetEmail(email)
+                    .then(() => {
+                        alert('Password reset email sent! Check your inbox.');
+                    })
+                    .catch((error) => {
+                        alert('Error sending reset email: ' + error.message);
+                    });
+            }
+        });
+
+        // Check if user is already signed in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in, show home page
+                showHomePage(user);
+            } else {
+                // User is signed out, show login page
+                showPage(loginPage);
+            }
+        });
+    </script>
+</body>
+</html>
